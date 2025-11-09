@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Redirecting…</title>
+    <link rel="icon" href="/favicon.png" />
+  </head>
+  <body>
+    <script>
+      // SPA fallback for GitHub Pages: fetch the real index and replace the document
+      (function () {
+        var requestedPath = location.pathname + location.search + location.hash;
+        fetch('/index.html')
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            document.open();
+            document.write(html);
+            document.close();
+            // restore the original URL in the address bar so the SPA router sees it
+            history.replaceState(null, null, requestedPath);
+          })
+          .catch(function () {
+            // fallback: redirect to root
+            location.replace('/');
+          });
+      })();
+    </script>
+  </body>
+</html>
