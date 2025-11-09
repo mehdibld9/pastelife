@@ -25,7 +25,7 @@ export default function Header() {
     <header className="h-16 border-b flex items-center justify-between px-4 md:px-6 sticky top-0 bg-background z-50">
       <Link href="/">
         <a className="text-xl font-bold hover-elevate active-elevate-2 px-3 py-2 rounded-md -ml-3" data-testid="link-home">
-          paste.life
+          Paste-Life
         </a>
       </Link>
       
