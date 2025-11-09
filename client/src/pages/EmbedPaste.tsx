@@ -1,22 +1,48 @@
 import { useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import CodeBlock from "@/components/CodeBlock";
 
 export default function EmbedPaste() {
   const [, params] = useRoute("/embed/:slug");
+  const slug = params?.slug || "";
 
-  const sampleContent = `function calculateFactorial(n: number): number {
-  if (n <= 1) return 1;
-  return n * calculateFactorial(n - 1);
-}
+  const { data: paste, isLoading, error } = useQuery<any>({
+    queryKey: ["/api/pastes", slug],
+    queryFn: async () => {
+      const response = await fetch(`/api/pastes/${slug}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch paste");
+      }
+      
+      return response.json();
+    },
+    enabled: !!slug,
+  });
 
-const result = calculateFactorial(5);
-console.log(\`Factorial of 5 is \${result}\`);
+  if (isLoading) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        Loading...
+      </div>
+    );
+  }
 
-export { calculateFactorial };`;
+  if (error || !paste) {
+    return (
+      <div className="p-4 text-sm text-destructive">
+        Failed to load paste
+      </div>
+    );
+  }
 
   return (
     <div className="p-2">
-      <CodeBlock code={sampleContent} language="typescript" showLineNumbers={false} />
+      <CodeBlock 
+        code={paste.content} 
+        language={paste.language || "plaintext"} 
+        showLineNumbers={false} 
+      />
     </div>
   );
 }

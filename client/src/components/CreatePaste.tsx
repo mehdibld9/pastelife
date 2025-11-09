@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface CreatePasteProps {
   onSuccess?: (data: { slug: string; secretToken: string }) => void;
@@ -16,21 +17,57 @@ export default function CreatePaste({ onSuccess }: CreatePasteProps) {
   const [language, setLanguage] = useState("plaintext");
   const [expiration, setExpiration] = useState("never");
   const [privacy, setPrivacy] = useState("unlisted");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) {
-      alert("Content is required");
+      toast({
+        title: "Error",
+        description: "Content is required",
+        variant: "destructive"
+      });
       return;
     }
+
+    setIsSubmitting(true);
     
-    console.log("Creating paste:", { title, content, language, expiration, privacy });
-    
-    if (onSuccess) {
-      onSuccess({
-        slug: "abc123",
-        secretToken: "secret-token-xyz789"
+    try {
+      const response = await fetch("/api/pastes", {
+        method: "POST",
+        body: JSON.stringify({
+          title: title || null,
+          content,
+          language,
+          expiration,
+          privacy
+        }),
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to create paste");
+      }
+
+      if (onSuccess) {
+        onSuccess({
+          slug: data.slug,
+          secretToken: data.secretToken
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create paste",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -144,8 +181,13 @@ export default function CreatePaste({ onSuccess }: CreatePasteProps) {
                   Actions
                 </Label>
                 <div className="flex gap-2">
-                  <Button type="submit" className="flex-1" data-testid="button-create">
-                    Create
+                  <Button 
+                    type="submit" 
+                    className="flex-1" 
+                    disabled={isSubmitting}
+                    data-testid="button-create"
+                  >
+                    {isSubmitting ? "Creating..." : "Create"}
                   </Button>
                 </div>
               </div>

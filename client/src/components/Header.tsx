@@ -24,17 +24,19 @@ export default function Header() {
   return (
     <header className="h-16 border-b flex items-center justify-between px-4 md:px-6 sticky top-0 bg-background z-50">
       <Link href="/">
-        <a className="text-xl font-bold hover-elevate active-elevate-2 px-3 py-2 rounded-md -ml-3" data-testid="link-home">
+        <span className="text-xl font-bold hover-elevate active-elevate-2 px-3 py-2 rounded-md -ml-3 cursor-pointer" data-testid="link-home">
           Paste-Life
-        </a>
+        </span>
       </Link>
       
       <div className="flex items-center gap-2">
         <Link href="/">
-          <Button size="default" data-testid="button-new-paste">
-            <Plus className="w-4 h-4 mr-2" />
-            New Paste
-          </Button>
+          <span>
+            <Button size="default" data-testid="button-new-paste">
+              <Plus className="w-4 h-4 mr-2" />
+              New Paste
+            </Button>
+          </span>
         </Link>
         <Button 
           size="icon" 

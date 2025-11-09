@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import CopyButton from "./CopyButton";
+import { useToast } from "@/hooks/use-toast";
 
 interface ViewPasteProps {
   slug: string;
@@ -43,19 +44,70 @@ export default function ViewPaste({
   const [tokenDialog, setTokenDialog] = useState<"edit" | "delete" | null>(null);
   const [token, setToken] = useState("");
   const [embedDialog, setEmbedDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const rawUrl = `${window.location.origin}/raw/${slug}`;
   const embedCode = `<iframe src="${window.location.origin}/embed/${slug}" width="100%" height="400" frameborder="0"></iframe>`;
 
-  const handleTokenSubmit = () => {
-    console.log(`${tokenDialog} with token:`, token);
-    if (tokenDialog === "edit" && onEdit) {
-      onEdit();
-    } else if (tokenDialog === "delete" && onDelete) {
-      onDelete();
+  const handleTokenSubmit = async () => {
+    if (!token.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your secret token",
+        variant: "destructive"
+      });
+      return;
     }
-    setTokenDialog(null);
-    setToken("");
+
+    setIsSubmitting(true);
+
+    try {
+      if (tokenDialog === "edit") {
+        // Redirect to edit page with token
+        window.location.href = `/?edit=${slug}&token=${token}`;
+      } else if (tokenDialog === "delete") {
+        const response = await fetch(`/api/pastes/${slug}`, {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ token })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          toast({
+            title: "Error",
+            description: data.error || "Failed to delete paste",
+            variant: "destructive"
+          });
+          setIsSubmitting(false);
+          return;
+        }
+
+        toast({
+          title: "Success",
+          description: "Paste deleted successfully"
+        });
+
+        setTokenDialog(null);
+        setToken("");
+        
+        if (onDelete) {
+          onDelete();
+        }
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -182,11 +234,19 @@ export default function ViewPaste({
               />
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setTokenDialog(null)}>
+              <Button 
+                variant="outline" 
+                onClick={() => setTokenDialog(null)}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleTokenSubmit} data-testid="button-submit-token">
-                {tokenDialog === "edit" ? "Edit" : "Delete"}
+              <Button 
+                onClick={handleTokenSubmit} 
+                disabled={isSubmitting}
+                data-testid="button-submit-token"
+              >
+                {isSubmitting ? "Processing..." : (tokenDialog === "edit" ? "Edit" : "Delete")}
               </Button>
             </div>
           </div>
