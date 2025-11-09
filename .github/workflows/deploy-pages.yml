@@ -1,0 +1,33 @@
+name: Deploy docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    outputs:
+      artifact-uploaded: ${{ steps.upload.outputs.result }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload pages artifact (docs/)
+        id: upload
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'docs'
+
+  deploy:
+    needs: upload
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
