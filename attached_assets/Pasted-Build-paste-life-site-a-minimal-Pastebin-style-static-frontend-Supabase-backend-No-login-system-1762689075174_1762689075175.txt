@@ -1,0 +1,83 @@
+Build paste-life.site — a minimal Pastebin-style static frontend + Supabase backend. No login system required. The frontend must be a static SPA suitable for GitHub Pages. Use Supabase for storage. Deliver a GitHub repo with frontend source, a small README.md (no tutorial required), and optionally Edge Function scripts for secure ops.
+
+Requirements (minimal)
+
+Create paste
+
+Fields: title (optional), content (required), language (optional), expiration (1h/1d/1w/never), privacy (public/unlisted/private).
+
+Return a short slug and a secret token for edit/delete. Show copyable raw URL.
+
+View paste
+
+Pretty view with syntax highlighting and a /raw/<slug> endpoint that returns text/plain.
+
+Show created_at, expires_at, views. If expired, return 410 user-friendly message.
+
+Edit / Delete
+
+No login: require secret token (sent by user or included in tokenized edit link). Server-side verification required.
+
+Privacy
+
+public = selectable by anon; unlisted = not in public lists; private = accessible only via server verification with secret token.
+
+Raw + embed
+
+Provide raw route and an embeddable <iframe> snippet.
+
+Stats
+
+Increment and store views.
+
+Rate limiting & abuse
+
+Implement basic per-IP create throttling. Support optional CAPTCHA integration.
+
+Security
+
+Prevent XSS on display. Use Supabase RLS; do not expose service role key in frontend.
+
+Implement sensitive ops (private access, edit/delete, view increment if needed) via Supabase Edge Function or server-side endpoint using service role key.
+
+Frontend
+
+Static SPA (React + Vite recommended) that deploys to GitHub Pages. Client uses Supabase anon key and respects RLS.
+
+Minimal database schema (provide in repo)
+create table public.pastes (
+  id uuid default gen_random_uuid() primary key,
+  slug text not null unique,
+  title text,
+  content text not null,
+  language text,
+  privacy text not null default 'unlisted',
+  secret_token text not null,
+  created_at timestamptz default now(),
+  expires_at timestamptz,
+  views int default 0
+);
+create index on public.pastes (created_at desc);
+create index on public.pastes using gin ((to_tsvector('english', coalesce(title,'') || ' ' || content)));
+
+Deliverables
+
+GitHub repo with:
+
+frontend/ SPA ready for GitHub Pages.
+
+README.md (brief: how to run, build, and where to add Supabase keys; no full tutorial).
+
+scripts/ optionally containing Edge Function examples for private access + edit/delete (service role key usage).
+
+GitHub Actions workflow example to build & deploy to GitHub Pages (short example YAML).
+
+Acceptance (how I’ll check)
+
+I can build and deploy frontend to GitHub Pages.
+
+I can create a paste, receive slug + secret token, view via /slug and /raw/slug.
+
+Edit/Delete require the secret token and happen server-side (Edge Function or server).
+
+Security note: keep service role key only in server/Edge Function environment; client must only use anon key.
